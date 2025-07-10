@@ -188,6 +188,10 @@
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
             outline: none;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .control-btn:hover {
@@ -678,46 +682,40 @@
             document.getElementById('pauseBtn').textContent = isPaused ? '繼續' : '暫停';
         }
         
-        // 觸控按鈕事件處理
+        // 觸控按鈕事件處理（簡化版）
         function setupTouchControls() {
-            const leftBtn = document.getElementById('leftBtn');
-            const rightBtn = document.getElementById('rightBtn');
-            const downBtn = document.getElementById('downBtn');
-            const rotateBtn = document.getElementById('rotateBtn');
-            const pauseBtn = document.getElementById('pauseBtn');
-            
-            // 單擊事件
-            leftBtn.addEventListener('click', (e) => {
-                e.preventDefault();
+            // 簡單的點擊事件處理
+            document.getElementById('leftBtn').onclick = function() {
                 if (gameRunning && !isPaused) moveLeft();
-            });
+            };
             
-            rightBtn.addEventListener('click', (e) => {
-                e.preventDefault();
+            document.getElementById('rightBtn').onclick = function() {
                 if (gameRunning && !isPaused) moveRight();
-            });
+            };
             
-            downBtn.addEventListener('click', (e) => {
-                e.preventDefault();
+            document.getElementById('downBtn').onclick = function() {
                 if (gameRunning && !isPaused) moveDown();
-            });
+            };
             
-            rotateBtn.addEventListener('click', (e) => {
-                e.preventDefault();
+            document.getElementById('rotateBtn').onclick = function() {
                 if (gameRunning && !isPaused) rotate();
-            });
+            };
             
-            pauseBtn.addEventListener('click', (e) => {
-                e.preventDefault();
+            document.getElementById('pauseBtn').onclick = function() {
                 if (gameRunning) togglePause();
-            });
+            };
             
-            // 觸控事件
-            let holdInterval;
+            // 觸控事件處理
+            let isHolding = false;
+            let holdAction = null;
+            let holdInterval = null;
             
             function startHold(action) {
-                action();
-                holdInterval = setInterval(action, 120);
+                if (isHolding) return;
+                isHolding = true;
+                holdAction = action;
+                action(); // 立即執行一次
+                holdInterval = setInterval(action, 150);
             }
             
             function stopHold() {
@@ -725,89 +723,63 @@
                     clearInterval(holdInterval);
                     holdInterval = null;
                 }
+                isHolding = false;
+                holdAction = null;
             }
             
-            // 左移按鈕
-            leftBtn.addEventListener('touchstart', (e) => {
+            // 左移按鈕觸控
+            const leftBtn = document.getElementById('leftBtn');
+            leftBtn.addEventListener('touchstart', function(e) {
                 e.preventDefault();
-                e.stopPropagation();
                 if (gameRunning && !isPaused) startHold(moveLeft);
-            });
+            }, { passive: false });
             
-            leftBtn.addEventListener('touchend', (e) => {
+            leftBtn.addEventListener('touchend', function(e) {
                 e.preventDefault();
-                e.stopPropagation();
                 stopHold();
-            });
+            }, { passive: false });
             
-            leftBtn.addEventListener('touchcancel', (e) => {
+            // 右移按鈕觸控
+            const rightBtn = document.getElementById('rightBtn');
+            rightBtn.addEventListener('touchstart', function(e) {
                 e.preventDefault();
-                e.stopPropagation();
-                stopHold();
-            });
-            
-            // 右移按鈕
-            rightBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
                 if (gameRunning && !isPaused) startHold(moveRight);
-            });
+            }, { passive: false });
             
-            rightBtn.addEventListener('touchend', (e) => {
+            rightBtn.addEventListener('touchend', function(e) {
                 e.preventDefault();
-                e.stopPropagation();
                 stopHold();
-            });
+            }, { passive: false });
             
-            rightBtn.addEventListener('touchcancel', (e) => {
+            // 下降按鈕觸控
+            const downBtn = document.getElementById('downBtn');
+            downBtn.addEventListener('touchstart', function(e) {
                 e.preventDefault();
-                e.stopPropagation();
-                stopHold();
-            });
-            
-            // 下降按鈕
-            downBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
                 if (gameRunning && !isPaused) startHold(moveDown);
-            });
+            }, { passive: false });
             
-            downBtn.addEventListener('touchend', (e) => {
+            downBtn.addEventListener('touchend', function(e) {
                 e.preventDefault();
-                e.stopPropagation();
                 stopHold();
-            });
+            }, { passive: false });
             
-            downBtn.addEventListener('touchcancel', (e) => {
+            // 旋轉按鈕觸控（不需要長按）
+            const rotateBtn = document.getElementById('rotateBtn');
+            rotateBtn.addEventListener('touchstart', function(e) {
                 e.preventDefault();
-                e.stopPropagation();
-                stopHold();
-            });
-            
-            // 旋轉按鈕（單次觸控）
-            rotateBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
                 if (gameRunning && !isPaused) rotate();
-            });
+            }, { passive: false });
             
-            // 暫停按鈕
-            pauseBtn.addEventListener('touchstart', (e) => {
+            // 暫停按鈕觸控
+            const pauseBtn = document.getElementById('pauseBtn');
+            pauseBtn.addEventListener('touchstart', function(e) {
                 e.preventDefault();
-                e.stopPropagation();
                 if (gameRunning) togglePause();
-            });
+            }, { passive: false });
             
-            // 防止所有按鈕的預設觸控行為
-            document.querySelectorAll('.control-btn').forEach(btn => {
-                btn.addEventListener('touchmove', (e) => {
-                    e.preventDefault();
-                });
-                
-                btn.addEventListener('contextmenu', (e) => {
-                    e.preventDefault();
-                });
-            });
+            // 全局停止長按（當手指離開屏幕時）
+            document.addEventListener('touchend', stopHold);
+            document.addEventListener('touchcancel', stopHold);
         }
         
         // 初始化遊戲
