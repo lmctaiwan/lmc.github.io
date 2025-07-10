@@ -156,6 +156,76 @@
             box-shadow: 0 5px 15px rgba(238, 90, 36, 0.4);
         }
         
+        .mobile-controls {
+            display: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px;
+            backdrop-filter: blur(5px);
+            margin-top: 15px;
+        }
+        
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 200px;
+            margin: 0 auto;
+        }
+        
+        .control-btn {
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        
+        .control-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+        
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .control-btn.rotate {
+            grid-column: 2;
+            background: linear-gradient(45deg, #fa709a, #fee140);
+        }
+        
+        .control-btn.left {
+            grid-column: 1;
+            grid-row: 2;
+        }
+        
+        .control-btn.right {
+            grid-column: 3;
+            grid-row: 2;
+        }
+        
+        .control-btn.down {
+            grid-column: 2;
+            grid-row: 2;
+            background: linear-gradient(45deg, #a8edea, #fed6e3);
+        }
+        
+        .control-btn.pause {
+            grid-column: 1 / span 3;
+            grid-row: 3;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            font-size: 16px;
+            padding: 12px;
+        }
+        
         @media (max-width: 768px) {
             .game-container {
                 flex-direction: column;
@@ -164,6 +234,19 @@
             
             .side-panel {
                 min-width: auto;
+            }
+            
+            .mobile-controls {
+                display: block;
+            }
+            
+            .controls {
+                display: none;
+            }
+            
+            #gameCanvas {
+                width: 100%;
+                max-width: 300px;
             }
         }
     </style>
@@ -204,6 +287,16 @@
                 <div class="control-item">
                     <span>暫停</span>
                     <span><span class="key">空格</span></span>
+                </div>
+            </div>
+            
+            <div class="mobile-controls">
+                <div class="control-grid">
+                    <button class="control-btn rotate" id="rotateBtn">↻</button>
+                    <button class="control-btn left" id="leftBtn">←</button>
+                    <button class="control-btn down" id="downBtn">↓</button>
+                    <button class="control-btn right" id="rightBtn">→</button>
+                    <button class="control-btn pause" id="pauseBtn">暫停</button>
                 </div>
             </div>
         </div>
@@ -529,35 +622,117 @@
             
             switch (e.key) {
                 case 'ArrowLeft':
-                    if (currentPiece && !checkCollision(currentPiece, -1, 0)) {
-                        currentPiece.x--;
-                    }
+                    moveLeft();
                     break;
                 case 'ArrowRight':
-                    if (currentPiece && !checkCollision(currentPiece, 1, 0)) {
-                        currentPiece.x++;
-                    }
+                    moveRight();
                     break;
                 case 'ArrowDown':
-                    if (currentPiece && !checkCollision(currentPiece, 0, 1)) {
-                        currentPiece.y++;
-                        score++;
-                        updateDisplay();
-                    }
+                    moveDown();
                     break;
                 case 'ArrowUp':
-                    if (currentPiece) {
-                        const rotated = rotatePiece(currentPiece);
-                        if (!checkCollision(rotated)) {
-                            currentPiece = rotated;
-                        }
-                    }
+                    rotate();
                     break;
                 case ' ':
                     e.preventDefault();
-                    isPaused = !isPaused;
+                    togglePause();
                     break;
             }
+        });
+        
+        // 控制函數
+        function moveLeft() {
+            if (currentPiece && !checkCollision(currentPiece, -1, 0)) {
+                currentPiece.x--;
+            }
+        }
+        
+        function moveRight() {
+            if (currentPiece && !checkCollision(currentPiece, 1, 0)) {
+                currentPiece.x++;
+            }
+        }
+        
+        function moveDown() {
+            if (currentPiece && !checkCollision(currentPiece, 0, 1)) {
+                currentPiece.y++;
+                score++;
+                updateDisplay();
+            }
+        }
+        
+        function rotate() {
+            if (currentPiece) {
+                const rotated = rotatePiece(currentPiece);
+                if (!checkCollision(rotated)) {
+                    currentPiece = rotated;
+                }
+            }
+        }
+        
+        function togglePause() {
+            isPaused = !isPaused;
+            document.getElementById('pauseBtn').textContent = isPaused ? '繼續' : '暫停';
+        }
+        
+        // 觸控按鈕事件
+        document.getElementById('leftBtn').addEventListener('click', () => {
+            if (gameRunning && !isPaused) moveLeft();
+        });
+        
+        document.getElementById('rightBtn').addEventListener('click', () => {
+            if (gameRunning && !isPaused) moveRight();
+        });
+        
+        document.getElementById('downBtn').addEventListener('click', () => {
+            if (gameRunning && !isPaused) moveDown();
+        });
+        
+        document.getElementById('rotateBtn').addEventListener('click', () => {
+            if (gameRunning && !isPaused) rotate();
+        });
+        
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            if (gameRunning) togglePause();
+        });
+        
+        // 觸控按鈕長按效果
+        let holdInterval;
+        
+        function startHold(action) {
+            action();
+            holdInterval = setInterval(action, 150);
+        }
+        
+        function stopHold() {
+            clearInterval(holdInterval);
+        }
+        
+        // 為左右移動按鈕添加長按功能
+        document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameRunning && !isPaused) startHold(moveLeft);
+        });
+        
+        document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameRunning && !isPaused) startHold(moveRight);
+        });
+        
+        document.getElementById('downBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameRunning && !isPaused) startHold(moveDown);
+        });
+        
+        document.getElementById('leftBtn').addEventListener('touchend', stopHold);
+        document.getElementById('rightBtn').addEventListener('touchend', stopHold);
+        document.getElementById('downBtn').addEventListener('touchend', stopHold);
+        
+        // 防止觸控按鈕的預設行為
+        document.querySelectorAll('.control-btn').forEach(btn => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+            });
         });
         
         // 初始化遊戲
